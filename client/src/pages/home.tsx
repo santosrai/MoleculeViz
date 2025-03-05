@@ -37,7 +37,7 @@ export default function Home() {
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-4xl font-bold text-center mb-8">Molecular Visualization</h1>
-      
+
       <Card className="mb-8">
         <CardHeader>
           <CardTitle>Search Molecule</CardTitle>
@@ -59,22 +59,22 @@ export default function Home() {
       </Card>
 
       {searchMutation.data && (
-        <div className="grid md:grid-cols-2 gap-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>3D Structure</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <MoleculeViewer structure={searchMutation.data.structure} />
-            </CardContent>
-          </Card>
-
+        <div className="grid grid-cols-[400px_1fr] gap-8">
           <Card>
             <CardHeader>
               <CardTitle>Chat Assistant</CardTitle>
             </CardHeader>
             <CardContent>
               <ChatInterface moleculeId={searchMutation.data.id} />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>3D Structure</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <MoleculeViewer structure={searchMutation.data.structure} />
             </CardContent>
           </Card>
         </div>
