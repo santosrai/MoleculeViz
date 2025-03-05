@@ -39,13 +39,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { question, moleculeId } = req.body;
 
+      // Get molecule information to provide context
+      const molecule = await storage.getMolecule(moleculeId);
+      if (!molecule) {
+        throw new Error("Molecule not found");
+      }
+
       // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
           {
             role: "system",
-            content: "You are a chemistry expert. Answer questions about molecules and chemical compounds. Provide answers in JSON format with an 'answer' field."
+            content: `You are a chemistry expert. You are discussing the molecule ${molecule.name} (${molecule.formula}). Its molecular structure consists of ${molecule.structure.atoms.length} atoms and ${molecule.structure.bonds.length} bonds. Answer questions about this molecule and provide answers in JSON format with an 'answer' field.`
           },
           {
             role: "user",
