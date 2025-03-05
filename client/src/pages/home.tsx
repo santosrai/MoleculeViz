@@ -43,23 +43,32 @@ export default function Home() {
     <div className="container mx-auto py-8">
       <h1 className="text-4xl font-bold text-center mb-8">Molecular Visualization</h1>
 
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Search Molecule</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSearch} className="flex gap-2">
+            <Input
+              value={moleculeName}
+              onChange={(e) => setMoleculeName(e.target.value)}
+              placeholder="Search molecule..."
+              className="flex-1"
+            />
+            <Button type="submit" disabled={searchMutation.isPending}>
+              <Search className="w-4 h-4" />
+              Search
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-[400px_1fr] gap-8">
         <Card>
           <CardHeader>
             <CardTitle>Chat Assistant</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSearch} className="flex gap-2 mb-4">
-              <Input
-                value={moleculeName}
-                onChange={(e) => setMoleculeName(e.target.value)}
-                placeholder="Search molecule..."
-                className="flex-1"
-              />
-              <Button type="submit" disabled={searchMutation.isPending}>
-                <Search className="w-4 h-4" />
-              </Button>
-            </form>
             {searchMutation.data && (
               <ChatInterface moleculeId={searchMutation.data.id} />
             )}
