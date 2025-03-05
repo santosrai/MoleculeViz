@@ -11,12 +11,16 @@ import { Search } from "lucide-react";
 
 export default function Home() {
   const [moleculeName, setMoleculeName] = useState("water"); // Default to water
+  const [currentMolecule, setCurrentMolecule] = useState<any>(null);
   const { toast } = useToast();
 
   const searchMutation = useMutation({
     mutationFn: async (name: string) => {
       const response = await apiRequest("GET", `/api/molecules/name/${name}`);
       return response.json();
+    },
+    onSuccess: (data) => {
+      setCurrentMolecule(data);
     },
     onError: () => {
       toast({
@@ -63,29 +67,27 @@ export default function Home() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-[400px_1fr] gap-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Chat Assistant</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {searchMutation.data && (
-              <ChatInterface moleculeId={searchMutation.data.id} />
-            )}
-          </CardContent>
-        </Card>
+      {currentMolecule && (
+        <div className="grid grid-cols-[400px_1fr] gap-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Chat Assistant</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChatInterface moleculeId={currentMolecule.id} />
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>3D Structure</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {searchMutation.data && (
-              <MoleculeViewer structure={searchMutation.data.structure} />
-            )}
-          </CardContent>
-        </Card>
-      </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>3D Structure</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <MoleculeViewer structure={currentMolecule.structure} />
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
