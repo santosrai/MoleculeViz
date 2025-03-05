@@ -42,8 +42,8 @@ export function MoleculeViewer({ structure }: MoleculeViewerProps) {
       atomMeshes.set(atom.id, mesh);
     });
 
-    // Create bonds between atoms
-    const bondGeometry = new THREE.CylinderGeometry(0.1, 0.1, 1, 32);
+    // Create bonds between atoms - thicker and more visible
+    const bondGeometry = new THREE.CylinderGeometry(0.15, 0.15, 1, 16);
 
     structure.bonds.forEach((bond: any) => {
       const [atom1Id, atom2Id] = bond.atomIds;
@@ -58,32 +58,39 @@ export function MoleculeViewer({ structure }: MoleculeViewerProps) {
         const midpoint = start.clone().lerp(end, 0.5);
         const bondLength = start.distanceTo(end);
 
-        // Create the bond cylinder
-        const bondMaterial = new THREE.MeshPhongMaterial({ color: 0xcccccc });
+        // Create the bond cylinder with better material
+        const bondMaterial = new THREE.MeshPhongMaterial({ 
+          color: 0xffffff,
+          shininess: 100,
+          specular: 0x444444 
+        });
         const bondMesh = new THREE.Mesh(bondGeometry, bondMaterial);
 
-        // Position the bond at the midpoint
+        // Position and scale the bond
         bondMesh.position.copy(midpoint);
-
-        // Scale the bond to reach between atoms
         bondMesh.scale.y = bondLength;
 
         // Calculate rotation to align with atoms
         const direction = end.clone().sub(start);
-        const arrow = new THREE.ArrowHelper(direction.normalize(), start);
-        bondMesh.setRotationFromQuaternion(arrow.quaternion);
+        const quaternion = new THREE.Quaternion();
+        quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+        bondMesh.setRotationFromQuaternion(quaternion);
 
         scene.add(bondMesh);
       }
     });
 
-    // Add lights
-    const ambientLight = new THREE.AmbientLight(0x404040);
+    // Enhanced lighting for better visibility
+    const ambientLight = new THREE.AmbientLight(0x404040, 2);
     scene.add(ambientLight);
 
-    const light = new THREE.DirectionalLight(0xffffff, 1);
-    light.position.set(10, 10, 10);
-    scene.add(light);
+    const light1 = new THREE.DirectionalLight(0xffffff, 1);
+    light1.position.set(10, 10, 10);
+    scene.add(light1);
+
+    const light2 = new THREE.DirectionalLight(0xffffff, 0.5);
+    light2.position.set(-10, -10, -10);
+    scene.add(light2);
 
     function animate() {
       requestAnimationFrame(animate);
