@@ -1,6 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Card } from "@/components/ui/card";
 
 interface MoleculeViewerProps {
   structure: any;
@@ -8,6 +10,9 @@ interface MoleculeViewerProps {
 
 export function MoleculeViewer({ structure }: MoleculeViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [showLonePairs, setShowLonePairs] = useState(false);
+  const [showBondAngles, setShowBondAngles] = useState(false);
+  const sceneObjectsRef = useRef<THREE.Object3D[]>([]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -34,12 +39,21 @@ export function MoleculeViewer({ structure }: MoleculeViewerProps) {
     const atomGeometry = new THREE.SphereGeometry(0.5, 32, 32);
     const atomMeshes = new Map();
 
+    // Clear previous objects
+    sceneObjectsRef.current.forEach(obj => scene.remove(obj));
+    sceneObjectsRef.current = [];
+
     structure.atoms.forEach((atom: any) => {
-      const material = new THREE.MeshPhongMaterial({ color: atom.color });
+      const material = new THREE.MeshPhongMaterial({ 
+        color: atom.color,
+        shininess: 100,
+        specular: 0x444444
+      });
       const mesh = new THREE.Mesh(atomGeometry, material);
       mesh.position.set(atom.x, atom.y, atom.z);
       scene.add(mesh);
       atomMeshes.set(atom.id, mesh);
+      sceneObjectsRef.current.push(mesh);
     });
 
     // Create bonds between atoms - thicker and more visible
@@ -77,8 +91,64 @@ export function MoleculeViewer({ structure }: MoleculeViewerProps) {
         bondMesh.setRotationFromQuaternion(quaternion);
 
         scene.add(bondMesh);
+        sceneObjectsRef.current.push(bondMesh);
+
+        // Add bond angles if enabled
+        if (showBondAngles) {
+          // Find all other bonds connected to atom1
+          const connectedBonds = structure.bonds.filter(
+            (b: any) => b !== bond && (b.atomIds.includes(atom1Id) || b.atomIds.includes(atom2Id))
+          );
+
+          connectedBonds.forEach((otherBond: any) => {
+            const otherAtomId = otherBond.atomIds.find((id: number) => id !== atom1Id && id !== atom2Id);
+            if (otherAtomId) {
+              const otherAtom = structure.atoms.find((a: any) => a.id === otherAtomId);
+              if (otherAtom) {
+                const otherPoint = new THREE.Vector3(otherAtom.x, otherAtom.y, otherAtom.z);
+                const angle = direction.angleTo(otherPoint.sub(start)) * (180 / Math.PI);
+
+                // Create angle text
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                  canvas.width = 128;
+                  canvas.height = 64;
+                  ctx.fillStyle = 'white';
+                  ctx.font = '24px Arial';
+                  ctx.fillText(`${angle.toFixed(1)}°`, 10, 32);
+
+                  const texture = new THREE.CanvasTexture(canvas);
+                  const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+                  const sprite = new THREE.Sprite(spriteMaterial);
+                  sprite.position.copy(midpoint);
+                  sprite.scale.set(2, 1, 1);
+                  scene.add(sprite);
+                  sceneObjectsRef.current.push(sprite);
+                }
+              }
+            }
+          });
+        }
       }
     });
+
+    // Add lone pairs if enabled
+    if (showLonePairs && structure.lonePairs) {
+      const lonePairGeometry = new THREE.SphereGeometry(0.2, 16, 16);
+      const lonePairMaterial = new THREE.MeshPhongMaterial({
+        color: 0xffff00,
+        opacity: 0.5,
+        transparent: true
+      });
+
+      structure.lonePairs.forEach((lp: any) => {
+        const mesh = new THREE.Mesh(lonePairGeometry, lonePairMaterial);
+        mesh.position.set(lp.x, lp.y, lp.z);
+        scene.add(mesh);
+        sceneObjectsRef.current.push(mesh);
+      });
+    }
 
     // Enhanced lighting for better visibility
     const ambientLight = new THREE.AmbientLight(0x404040, 2);
@@ -103,7 +173,31 @@ export function MoleculeViewer({ structure }: MoleculeViewerProps) {
       containerRef.current?.removeChild(renderer.domElement);
       renderer.dispose();
     };
-  }, [structure]);
+  }, [structure, showLonePairs, showBondAngles]);
 
-  return <div ref={containerRef} className="w-full h-[400px] rounded-lg" />;
+  return (
+    <div>
+      <Card className="p-4 mb-4">
+        <div className="flex gap-4">
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="lone-pairs" 
+              checked={showLonePairs}
+              onCheckedChange={(checked) => setShowLonePairs(checked as boolean)}
+            />
+            <label htmlFor="lone-pairs">Show Lone Pairs</label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="bond-angles" 
+              checked={showBondAngles}
+              onCheckedChange={(checked) => setShowBondAngles(checked as boolean)}
+            />
+            <label htmlFor="bond-angles">Show Bond Angles</label>
+          </div>
+        </div>
+      </Card>
+      <div ref={containerRef} className="w-full h-[400px] rounded-lg" />
+    </div>
+  );
 }

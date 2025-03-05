@@ -13,6 +13,10 @@ export const predefinedMolecules: InsertMolecule[] = [
       bonds: [
         { atomIds: [1, 2] },  // O-H bond 1
         { atomIds: [1, 3] },  // O-H bond 2
+      ],
+      lonePairs: [
+        { x: 0, y: -0.5, z: 0.5 },  // Lone pair 1
+        { x: 0, y: -0.5, z: -0.5 }, // Lone pair 2
       ]
     }
   },
@@ -32,7 +36,8 @@ export const predefinedMolecules: InsertMolecule[] = [
         { atomIds: [1, 3] },    // C-H bond 2
         { atomIds: [1, 4] },    // C-H bond 3
         { atomIds: [1, 5] }     // C-H bond 4
-      ]
+      ],
+      lonePairs: [] // Methane has no lone pairs
     }
   }
 ];
