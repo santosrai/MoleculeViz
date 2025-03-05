@@ -6,13 +6,13 @@ export const predefinedMolecules: InsertMolecule[] = [
     formula: "H2O",
     structure: {
       atoms: [
-        { x: 0, y: 0, z: 0, color: 0xff0000 },  // Oxygen (red)
-        { x: -0.8, y: 0.6, z: 0, color: 0xffffff },  // Hydrogen 1 (white)
-        { x: 0.8, y: 0.6, z: 0, color: 0xffffff },   // Hydrogen 2 (white)
+        { id: 1, x: 0, y: 0, z: 0, color: 0xff0000 },  // Oxygen (red)
+        { id: 2, x: -0.8, y: 0.6, z: 0, color: 0xffffff },  // Hydrogen 1 (white)
+        { id: 3, x: 0.8, y: 0.6, z: 0, color: 0xffffff },   // Hydrogen 2 (white)
       ],
       bonds: [
-        { x: -0.4, y: 0.3, z: 0, rx: 0.8, ry: 0, rz: 0 },  // O-H bond 1
-        { x: 0.4, y: 0.3, z: 0, rx: -0.8, ry: 0, rz: 0 },  // O-H bond 2
+        { atomIds: [1, 2] },  // O-H bond 1
+        { atomIds: [1, 3] },  // O-H bond 2
       ]
     }
   },
@@ -21,17 +21,17 @@ export const predefinedMolecules: InsertMolecule[] = [
     formula: "CH4",
     structure: {
       atoms: [
-        { x: 0, y: 0, z: 0, color: 0x808080 },  // Carbon (gray)
-        { x: 1, y: 1, z: 1, color: 0xffffff },   // Hydrogen 1
-        { x: -1, y: -1, z: 1, color: 0xffffff }, // Hydrogen 2
-        { x: 1, y: -1, z: -1, color: 0xffffff }, // Hydrogen 3
-        { x: -1, y: 1, z: -1, color: 0xffffff }  // Hydrogen 4
+        { id: 1, x: 0, y: 0, z: 0, color: 0x808080 },  // Carbon (gray)
+        { id: 2, x: 1, y: 1, z: 1, color: 0xffffff },   // Hydrogen 1
+        { id: 3, x: -1, y: -1, z: 1, color: 0xffffff }, // Hydrogen 2
+        { id: 4, x: 1, y: -1, z: -1, color: 0xffffff }, // Hydrogen 3
+        { id: 5, x: -1, y: 1, z: -1, color: 0xffffff }  // Hydrogen 4
       ],
       bonds: [
-        { x: 0.5, y: 0.5, z: 0.5, rx: 0.7, ry: 0.7, rz: 0.7 },    // C-H bond 1
-        { x: -0.5, y: -0.5, z: 0.5, rx: -0.7, ry: -0.7, rz: 0.7 }, // C-H bond 2
-        { x: 0.5, y: -0.5, z: -0.5, rx: 0.7, ry: -0.7, rz: -0.7 }, // C-H bond 3
-        { x: -0.5, y: 0.5, z: -0.5, rx: -0.7, ry: 0.7, rz: -0.7 }  // C-H bond 4
+        { atomIds: [1, 2] },    // C-H bond 1
+        { atomIds: [1, 3] },    // C-H bond 2
+        { atomIds: [1, 4] },    // C-H bond 3
+        { atomIds: [1, 5] }     // C-H bond 4
       ]
     }
   }
