@@ -1,4 +1,5 @@
 import { type Molecule, type InsertMolecule, type Chat, type InsertChat } from "@shared/schema";
+import { predefinedMolecules } from "./molecules";
 
 export interface IStorage {
   getMolecule(id: number): Promise<Molecule | undefined>;
@@ -19,6 +20,11 @@ export class MemStorage implements IStorage {
     this.chats = new Map();
     this.currentMoleculeId = 1;
     this.currentChatId = 1;
+
+    // Initialize with predefined molecules
+    predefinedMolecules.forEach(molecule => {
+      this.createMolecule(molecule);
+    });
   }
 
   async getMolecule(id: number): Promise<Molecule | undefined> {
