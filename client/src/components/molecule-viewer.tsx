@@ -87,15 +87,25 @@ export function MoleculeViewer({ structure }: MoleculeViewerProps) {
         const bondMaterial = new THREE.MeshPhongMaterial({ color: 0xCCCCCC });
         const bond = new THREE.Mesh(bondGeometry, bondMaterial);
 
-        // Position bond at midpoint
+        // Position bond at the correct midpoint between original start and adjusted end
         const midpoint = new THREE.Vector3().addVectors(originalStart, adjustedEnd).multiplyScalar(0.5);
         bond.position.copy(midpoint);
 
         // Orient bond along direction vector
         bond.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
 
-        // Scale bond to match distance
+        // Scale bond to match the adjusted distance
         bond.scale.set(1, adjustedDistance / 2, 1);
+
+        // Adjust atom positions if it's not the central atom (assuming first atom is usually central)
+        // This makes atom2 move with the bond adjustment when it's not a central atom
+        if (atom2Id !== structure.atoms[0].id && bond.scale.y !== 1) {
+          const atom2Mesh = atomMeshes.get(atom2Id);
+          if (atom2Mesh) {
+            // Position the second atom at the end of the adjusted bond
+            atom2Mesh.position.copy(adjustedEnd);
+          }
+        }
 
         scene.add(bond);
         sceneObjectsRef.current.push(bond);
