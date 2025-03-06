@@ -189,9 +189,6 @@ export function MoleculeViewer({ structure }: MoleculeViewerProps) {
                     const radius = 1.5;
                     const segments = 32;
                     
-                    // Calculate the angle between the two vectors
-                    const angle = vec1.angleTo(vec2) * (180 / Math.PI);
-                    
                     // Calculate the bisector vector between vec1 and vec2
                     const bisector = vec1.clone().add(vec2).normalize();
                     
