@@ -79,33 +79,40 @@ export function MoleculeViewer({ structure }: MoleculeViewerProps) {
 
         // Calculate adjusted distance based on bond length factor
         const adjustedDistance = originalDistance * bondLengthFactor;
-
-        // Calculate new end point with adjusted distance
-        const adjustedEnd = originalStart.clone().add(direction.clone().multiplyScalar(adjustedDistance));
-
+        
+        // Get the actual positions of the atoms from their meshes
+        const atom1Mesh = atomMeshes.get(atom1Id);
+        const atom2Mesh = atomMeshes.get(atom2Id);
+        
+        if (!atom1Mesh || !atom2Mesh) return;
+        
+        // Use the current positions of the atoms for bond calculation
+        const startPos = atom1Mesh.position.clone();
+        
+        // For the end position, calculate it based on the direction and distance from the start atom
+        // This ensures the bond always starts from the current position of atom1
+        const endPos = startPos.clone().add(direction.clone().multiplyScalar(adjustedDistance));
+        
+        // Update the position of atom2 to the end of the bond
+        if (atom2Id !== structure.atoms[0].id) {
+          atom2Mesh.position.copy(endPos);
+        }
+        
         // Create bond cylinder
         const bondMaterial = new THREE.MeshPhongMaterial({ color: 0xCCCCCC });
         const bond = new THREE.Mesh(bondGeometry, bondMaterial);
-
-        // Position bond at the correct midpoint between original start and adjusted end
-        const midpoint = new THREE.Vector3().addVectors(originalStart, adjustedEnd).multiplyScalar(0.5);
+        
+        // Position bond at the midpoint between the atoms' current positions
+        const midpoint = new THREE.Vector3().addVectors(startPos, endPos).multiplyScalar(0.5);
         bond.position.copy(midpoint);
-
-        // Orient bond along direction vector
-        bond.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
-
-        // Scale bond to match the adjusted distance
-        bond.scale.set(1, adjustedDistance / 2, 1);
-
-        // Adjust atom positions if it's not the central atom (assuming first atom is usually central)
-        // This makes atom2 move with the bond adjustment when it's not a central atom
-        if (atom2Id !== structure.atoms[0].id && bond.scale.y !== 1) {
-          const atom2Mesh = atomMeshes.get(atom2Id);
-          if (atom2Mesh) {
-            // Position the second atom at the end of the adjusted bond
-            atom2Mesh.position.copy(adjustedEnd);
-          }
-        }
+        
+        // Orient bond along current direction vector between atoms
+        const currentDirection = endPos.clone().sub(startPos).normalize();
+        bond.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), currentDirection);
+        
+        // Scale bond to match the current distance between atoms
+        const currentDistance = startPos.distanceTo(endPos);
+        bond.scale.set(1, currentDistance / 2, 1);
 
         scene.add(bond);
         sceneObjectsRef.current.push(bond);
