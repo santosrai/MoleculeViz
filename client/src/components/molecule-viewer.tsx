@@ -68,7 +68,7 @@ export function MoleculeViewer({ structure }: MoleculeViewerProps) {
       if (atom1 && atom2) {
         const start = new THREE.Vector3(atom1.x, atom1.y, atom1.z);
         const originalEnd = new THREE.Vector3(atom2.x, atom2.y, atom2.z);
-        
+
         // Apply bond length factor
         const direction = originalEnd.clone().sub(start).normalize();
         const distance = start.distanceTo(originalEnd);
@@ -92,7 +92,7 @@ export function MoleculeViewer({ structure }: MoleculeViewerProps) {
         bondMesh.scale.y = bondLength;
 
         // Calculate rotation to align with atoms
-        const direction = end.clone().sub(start);
+        
         const quaternion = new THREE.Quaternion();
         quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
         bondMesh.setRotationFromQuaternion(quaternion);
@@ -204,7 +204,7 @@ export function MoleculeViewer({ structure }: MoleculeViewerProps) {
               <label htmlFor="bond-angles">Show Bond Angles</label>
             </div>
           </div>
-          
+
           <div className="flex flex-col space-y-2">
             <label htmlFor="bond-length">Bond Length: {bondLengthFactor.toFixed(1)}x</label>
             <input
