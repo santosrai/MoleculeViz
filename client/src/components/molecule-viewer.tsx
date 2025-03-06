@@ -69,18 +69,18 @@ export function MoleculeViewer({ structure }: MoleculeViewerProps) {
         // Get the original positions
         const originalStart = new THREE.Vector3(atom1.x, atom1.y, atom1.z);
         const originalEnd = new THREE.Vector3(atom2.x, atom2.y, atom2.z);
-        
+
         // Calculate the direction vector between atoms
         const direction = originalEnd.clone().sub(originalStart).normalize();
         const originalDistance = originalStart.distanceTo(originalEnd);
-        
+
         // Calculate adjusted distance based on bond length factor
         const adjustedDistance = originalDistance * bondLengthFactor;
-        
+
         // Find out which atom is central (has more connections)
         const atom1Connections = structure.bonds.filter((b: any) => b.atomIds.includes(atom1Id)).length;
         const atom2Connections = structure.bonds.filter((b: any) => b.atomIds.includes(atom2Id)).length;
-        
+
         // Determine which atom to keep fixed
         let fixedAtom, movingAtom, fixedAtomId, movingAtomId;
         if (atom1Connections > atom2Connections) {
@@ -100,7 +100,7 @@ export function MoleculeViewer({ structure }: MoleculeViewerProps) {
           // Check if atom1 has position closer to origin
           const atom1DistToOrigin = originalStart.length();
           const atom2DistToOrigin = originalEnd.length();
-          
+
           if (atom1DistToOrigin <= atom2DistToOrigin) {
             fixedAtom = originalStart;
             movingAtom = originalEnd;
@@ -113,19 +113,19 @@ export function MoleculeViewer({ structure }: MoleculeViewerProps) {
             movingAtomId = atom1Id;
           }
         }
-        
+
         // Calculate new position for the moving atom only
         const moveDirection = fixedAtom === originalStart ? direction : direction.negate();
         const newMovingAtomPos = fixedAtom.clone().add(moveDirection.clone().multiplyScalar(adjustedDistance));
-        
+
         // Keep track of fixed and moving atom positions for rendering the bond
         const start = fixedAtom === originalStart ? fixedAtom.clone() : newMovingAtomPos.clone();
         const end = fixedAtom === originalEnd ? fixedAtom.clone() : newMovingAtomPos.clone();
-        
+
         // Update only the position of the moving atom
         const movingAtomMesh = atomMeshes.get(movingAtomId);
         if (movingAtomMesh) movingAtomMesh.position.copy(newMovingAtomPos);
-        
+
         // Calculate the midpoint and length of the bond
         const midpoint = start.clone().lerp(end, 0.5);
         const bondLength = start.distanceTo(end);
@@ -143,7 +143,7 @@ export function MoleculeViewer({ structure }: MoleculeViewerProps) {
         bondMesh.scale.y = bondLength;
 
         // Calculate rotation to align with atoms
-        
+
         const quaternion = new THREE.Quaternion();
         quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
         bondMesh.setRotationFromQuaternion(quaternion);
@@ -163,26 +163,98 @@ export function MoleculeViewer({ structure }: MoleculeViewerProps) {
             if (otherAtomId) {
               const otherAtom = structure.atoms.find((a: any) => a.id === otherAtomId);
               if (otherAtom) {
-                const otherPoint = new THREE.Vector3(otherAtom.x, otherAtom.y, otherAtom.z);
-                const angle = direction.angleTo(otherPoint.sub(start)) * (180 / Math.PI);
+                const commonAtomId = otherBond.atomIds.find((id: number) => id === atom1Id || id === atom2Id);
+                const commonAtom = structure.atoms.find((a: any) => a.id === commonAtomId);
 
-                // Create angle text
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                if (ctx) {
-                  canvas.width = 128;
-                  canvas.height = 64;
-                  ctx.fillStyle = 'white';
-                  ctx.font = '24px Arial';
-                  ctx.fillText(`${angle.toFixed(1)}°`, 10, 32);
+                if (commonAtom) {
+                  // Get vectors for both bonds from the common atom
+                  const commonPoint = new THREE.Vector3(commonAtom.x, commonAtom.y, commonAtom.z);
+                  const otherPoint = new THREE.Vector3(otherAtom.x, otherAtom.y, otherAtom.z);
 
-                  const texture = new THREE.CanvasTexture(canvas);
-                  const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
-                  const sprite = new THREE.Sprite(spriteMaterial);
-                  sprite.position.copy(midpoint);
-                  sprite.scale.set(2, 1, 1);
-                  scene.add(sprite);
-                  sceneObjectsRef.current.push(sprite);
+                  // For the first bond vector
+                  const firstBondAtomId = bond.atomIds.find((id: number) => id !== commonAtomId);
+                  const firstBondAtom = structure.atoms.find((a: any) => a.id === firstBondAtomId);
+
+                  if (firstBondAtom) {
+                    const firstBondPoint = new THREE.Vector3(firstBondAtom.x, firstBondAtom.y, firstBondAtom.z);
+
+                    // Calculate vectors from common atom to each connected atom
+                    const vec1 = new THREE.Vector3().subVectors(firstBondPoint, commonPoint).normalize();
+                    const vec2 = new THREE.Vector3().subVectors(otherPoint, commonPoint).normalize();
+
+                    // Calculate the angle in degrees
+                    const angle = vec1.angleTo(vec2) * (180 / Math.PI);
+
+                    // Create a semi-transparent disc to visualize the angle
+                    const radius = 1.5;
+                    const segments = 32;
+                    const thetaStart = 0;
+                    const thetaLength = angle * Math.PI / 180;
+
+                    const discGeometry = new THREE.CircleGeometry(radius, segments, thetaStart, thetaLength);
+                    const discMaterial = new THREE.MeshBasicMaterial({ 
+                      color: 0x444444, 
+                      side: THREE.DoubleSide,
+                      transparent: true,
+                      opacity: 0.5
+                    });
+
+                    const disc = new THREE.Mesh(discGeometry, discMaterial);
+                    disc.position.copy(commonPoint);
+
+                    // Calculate rotation to align with the plane defined by the two bonds
+                    const normal = new THREE.Vector3().crossVectors(vec1, vec2).normalize();
+
+                    // If vectors are colinear, use a perpendicular vector
+                    if (normal.length() < 0.1) {
+                      if (Math.abs(vec1.y) < 0.9) {
+                        normal.set(0, 1, 0);
+                      } else {
+                        normal.set(1, 0, 0);
+                      }
+                    }
+
+                    // Create a rotation from the disc's default orientation to the target orientation
+                    const discUpVector = new THREE.Vector3(0, 0, 1);
+                    const quaternion = new THREE.Quaternion().setFromUnitVectors(discUpVector, normal);
+                    disc.setRotationFromQuaternion(quaternion);
+
+                    // Adjust rotation to align with the first vector
+                    const discXAxis = new THREE.Vector3(1, 0, 0).applyQuaternion(quaternion);
+                    const rotationAngle = discXAxis.angleTo(vec1);
+
+                    // Determine rotation direction
+                    const cross = new THREE.Vector3().crossVectors(discXAxis, vec1);
+                    const directionSign = cross.dot(normal) > 0 ? 1 : -1;
+
+                    // Apply additional rotation
+                    disc.rotateOnAxis(normal, directionSign * rotationAngle);
+
+                    scene.add(disc);
+                    sceneObjectsRef.current.push(disc);
+
+                    // Create angle text
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    if (ctx) {
+                      canvas.width = 128;
+                      canvas.height = 64;
+                      ctx.fillStyle = 'white';
+                      ctx.font = '24px Arial';
+                      ctx.fillText(`${angle.toFixed(1)}°`, 10, 32);
+
+                      const texture = new THREE.CanvasTexture(canvas);
+                      const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+                      const sprite = new THREE.Sprite(spriteMaterial);
+
+                      // Position the text slightly above the common atom
+                      const textOffset = normal.clone().multiplyScalar(0.7);
+                      sprite.position.copy(commonPoint.clone().add(textOffset));
+                      sprite.scale.set(2, 1, 1);
+                      scene.add(sprite);
+                      sceneObjectsRef.current.push(sprite);
+                    }
+                  }
                 }
               }
             }
