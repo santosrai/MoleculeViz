@@ -66,15 +66,31 @@ export function MoleculeViewer({ structure }: MoleculeViewerProps) {
       const atom2 = structure.atoms.find((a: any) => a.id === atom2Id);
 
       if (atom1 && atom2) {
-        const start = new THREE.Vector3(atom1.x, atom1.y, atom1.z);
+        // Get the original positions
+        const originalStart = new THREE.Vector3(atom1.x, atom1.y, atom1.z);
         const originalEnd = new THREE.Vector3(atom2.x, atom2.y, atom2.z);
-
-        // Apply bond length factor
-        const direction = originalEnd.clone().sub(start).normalize();
-        const distance = start.distanceTo(originalEnd);
-        const adjustedDistance = distance * bondLengthFactor;
-        const end = start.clone().add(direction.multiplyScalar(adjustedDistance));
-
+        
+        // Calculate the direction vector between atoms
+        const direction = originalEnd.clone().sub(originalStart).normalize();
+        const originalDistance = originalStart.distanceTo(originalEnd);
+        
+        // Calculate adjusted distance based on bond length factor
+        const adjustedDistance = originalDistance * bondLengthFactor;
+        
+        // Move both atoms apart based on the difference
+        const distanceDiff = adjustedDistance - originalDistance;
+        const halfDiff = distanceDiff / 2;
+        
+        // Calculate new positions for atoms
+        const start = originalStart.clone().sub(direction.clone().multiplyScalar(halfDiff));
+        const end = originalEnd.clone().add(direction.clone().multiplyScalar(halfDiff));
+        
+        // Update the positions of atom meshes
+        const atom1Mesh = atomMeshes.get(atom1Id);
+        const atom2Mesh = atomMeshes.get(atom2Id);
+        if (atom1Mesh) atom1Mesh.position.copy(start);
+        if (atom2Mesh) atom2Mesh.position.copy(end);
+        
         // Calculate the midpoint and length of the bond
         const midpoint = start.clone().lerp(end, 0.5);
         const bondLength = start.distanceTo(end);
