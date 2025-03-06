@@ -18,6 +18,9 @@ export function MoleculeViewer({ structure }: MoleculeViewerProps) {
   useEffect(() => {
     if (!containerRef.current) return;
 
+    // Track processed bond pairs to avoid duplicates
+    const processedBondPairs = new Set();
+    
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x000000);
 
@@ -192,24 +195,29 @@ export function MoleculeViewer({ structure }: MoleculeViewerProps) {
                     // Calculate the bisector vector between vec1 and vec2
                     const bisector = vec1.clone().add(vec2).normalize();
                     
-                    // Start angle at -angle/2 to center the disc between the two bonds
-                    const halfAngle = angle / 2;
-                    const thetaStart = -halfAngle * Math.PI / 180;
-                    const thetaLength = angle * Math.PI / 180;
+                    // Only create one disc per bond pair
+                    const bondPairKey = [Math.min(otherAtomId, firstBondAtomId), Math.max(otherAtomId, firstBondAtomId)].join('-');
+                    
+                    if (!processedBondPairs.has(bondPairKey)) {
+                      // Start angle at -angle/2 to center the disc between the two bonds
+                      const halfAngle = angle / 2;
+                      const thetaStart = -halfAngle * Math.PI / 180;
+                      const thetaLength = angle * Math.PI / 180;
 
-                    const discGeometry = new THREE.CircleGeometry(radius, segments, thetaStart, thetaLength);
-                    const discMaterial = new THREE.MeshBasicMaterial({ 
-                      color: 0x444444, 
-                      side: THREE.DoubleSide,
-                      transparent: true,
-                      opacity: 0.5
-                    });
+                      const discGeometry = new THREE.CircleGeometry(radius, segments, thetaStart, thetaLength);
+                      const discMaterial = new THREE.MeshBasicMaterial({ 
+                        color: 0x444444, 
+                        side: THREE.DoubleSide,
+                        transparent: true,
+                        opacity: 0.3
+                      });
 
-                    const disc = new THREE.Mesh(discGeometry, discMaterial);
-                    disc.position.copy(commonPoint);
+                      const disc = new THREE.Mesh(discGeometry, discMaterial);
+                      disc.position.copy(commonPoint);
 
                     // Calculate rotation to align with the plane defined by the two bonds
                     const normal = new THREE.Vector3().crossVectors(vec1, vec2).normalize();
+                    }
 
                     // If vectors are colinear, use a perpendicular vector
                     if (normal.length() < 0.1) {
@@ -244,31 +252,38 @@ export function MoleculeViewer({ structure }: MoleculeViewerProps) {
                     scene.add(disc);
                     sceneObjectsRef.current.push(disc);
 
-                    // Create angle text
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    if (ctx) {
-                      canvas.width = 128;
-                      canvas.height = 64;
-                      ctx.fillStyle = 'white';
-                      ctx.font = '24px Arial';
-                      ctx.fillText(`${angle.toFixed(1)}°`, 10, 32);
+                    // Only create one angle text per bond pair
+                    // We'll use a unique key to prevent duplicate angle labels
+                    const bondPairKey = [Math.min(otherAtomId, firstBondAtomId), Math.max(otherAtomId, firstBondAtomId)].join('-');
+                    
+                    // Skip if we've already processed this bond pair
+                    if (!processedBondPairs.has(bondPairKey)) {
+                      processedBondPairs.add(bondPairKey);
+                      
+                      // Create angle text
+                      const canvas = document.createElement('canvas');
+                      const ctx = canvas.getContext('2d');
+                      if (ctx) {
+                        canvas.width = 128;
+                        canvas.height = 64;
+                        ctx.fillStyle = 'white';
+                        ctx.font = '24px Arial';
+                        ctx.fillText(`${angle.toFixed(1)}°`, 10, 32);
 
-                      const texture = new THREE.CanvasTexture(canvas);
-                      const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
-                      const sprite = new THREE.Sprite(spriteMaterial);
-                      
-                      // Position the text exactly in the middle of the disc
-                      // Use the true bisector for precise text positioning
-                      const textDistance = radius * 0.6; // Position at 60% of radius for better visibility
-                      const textDirection = trueBisector.clone().multiplyScalar(textDistance);
-                      const textX = commonPoint.x + textDirection.x;
-                      const textY = commonPoint.y + textDirection.y;
-                      const textZ = commonPoint.z + textDirection.z;
-                      
-                      // Apply the same rotation as the disc to maintain alignment
-                      sprite.position.set(textX, textY, textZ);
-                      sprite.scale.set(0.5, 0.25, 1);;
+                        const texture = new THREE.CanvasTexture(canvas);
+                        const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+                        const sprite = new THREE.Sprite(spriteMaterial);
+                        
+                        // Position the text exactly in the middle of the disc
+                        const textDistance = radius * 0.6; // Position at 60% of radius for better visibility
+                        const textDirection = bisector.clone().multiplyScalar(textDistance);
+                        const textX = commonPoint.x + textDirection.x;
+                        const textY = commonPoint.y + textDirection.y;
+                        const textZ = commonPoint.z + textDirection.z;
+                        
+                        // Apply the same rotation as the disc to maintain alignment
+                        sprite.position.set(textX, textY, textZ);
+                        sprite.scale.set(0.5, 0.25, 1);;
 
                       // Position the text slightly above the common atom
                       const textOffset = normal.clone().multiplyScalar(0.7);
