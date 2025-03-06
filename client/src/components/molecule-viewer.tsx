@@ -38,6 +38,12 @@ export function MoleculeViewer({ structure }: MoleculeViewerProps) {
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
+    controls.enableRotate = true;
+    controls.minPolarAngle = 0;
+    controls.maxPolarAngle = Math.PI; // Full rotation on vertical axis
+    controls.minAzimuthAngle = -Infinity; // No restriction on horizontal rotation
+    controls.maxAzimuthAngle = Infinity; // No restriction on horizontal rotation
+    controls.dampingFactor = 0.05; // Smoother rotation
 
     // Create atoms
     const atomGeometry = new THREE.SphereGeometry(0.5, 32, 32);
