@@ -77,19 +77,54 @@ export function MoleculeViewer({ structure }: MoleculeViewerProps) {
         // Calculate adjusted distance based on bond length factor
         const adjustedDistance = originalDistance * bondLengthFactor;
         
-        // Move both atoms apart based on the difference
-        const distanceDiff = adjustedDistance - originalDistance;
-        const halfDiff = distanceDiff / 2;
+        // Find out which atom is central (has more connections)
+        const atom1Connections = structure.bonds.filter((b: any) => b.atomIds.includes(atom1Id)).length;
+        const atom2Connections = structure.bonds.filter((b: any) => b.atomIds.includes(atom2Id)).length;
         
-        // Calculate new positions for atoms
-        const start = originalStart.clone().sub(direction.clone().multiplyScalar(halfDiff));
-        const end = originalEnd.clone().add(direction.clone().multiplyScalar(halfDiff));
+        // Determine which atom to keep fixed
+        let fixedAtom, movingAtom, fixedAtomId, movingAtomId;
+        if (atom1Connections > atom2Connections) {
+          // Atom1 is more central, keep it fixed
+          fixedAtom = originalStart;
+          movingAtom = originalEnd;
+          fixedAtomId = atom1Id;
+          movingAtomId = atom2Id;
+        } else if (atom2Connections > atom1Connections) {
+          // Atom2 is more central, keep it fixed
+          fixedAtom = originalEnd;
+          movingAtom = originalStart;
+          fixedAtomId = atom2Id;
+          movingAtomId = atom1Id;
+        } else {
+          // If equal connections, maybe atom1 is already central in the original data
+          // Check if atom1 has position closer to origin
+          const atom1DistToOrigin = originalStart.length();
+          const atom2DistToOrigin = originalEnd.length();
+          
+          if (atom1DistToOrigin <= atom2DistToOrigin) {
+            fixedAtom = originalStart;
+            movingAtom = originalEnd;
+            fixedAtomId = atom1Id;
+            movingAtomId = atom2Id;
+          } else {
+            fixedAtom = originalEnd;
+            movingAtom = originalStart;
+            fixedAtomId = atom2Id;
+            movingAtomId = atom1Id;
+          }
+        }
         
-        // Update the positions of atom meshes
-        const atom1Mesh = atomMeshes.get(atom1Id);
-        const atom2Mesh = atomMeshes.get(atom2Id);
-        if (atom1Mesh) atom1Mesh.position.copy(start);
-        if (atom2Mesh) atom2Mesh.position.copy(end);
+        // Calculate new position for the moving atom only
+        const moveDirection = fixedAtom === originalStart ? direction : direction.negate();
+        const newMovingAtomPos = fixedAtom.clone().add(moveDirection.clone().multiplyScalar(adjustedDistance));
+        
+        // Keep track of fixed and moving atom positions for rendering the bond
+        const start = fixedAtom === originalStart ? fixedAtom.clone() : newMovingAtomPos.clone();
+        const end = fixedAtom === originalEnd ? fixedAtom.clone() : newMovingAtomPos.clone();
+        
+        // Update only the position of the moving atom
+        const movingAtomMesh = atomMeshes.get(movingAtomId);
+        if (movingAtomMesh) movingAtomMesh.position.copy(newMovingAtomPos);
         
         // Calculate the midpoint and length of the bond
         const midpoint = start.clone().lerp(end, 0.5);
