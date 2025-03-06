@@ -246,6 +246,18 @@ export function MoleculeViewer({ structure }: MoleculeViewerProps) {
                       const texture = new THREE.CanvasTexture(canvas);
                       const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
                       const sprite = new THREE.Sprite(spriteMaterial);
+                      
+                      // Position the text in the middle of the disc
+                      // Calculate position at middle distance between center and edge, along the angle bisector
+                      const bisectorAngle = thetaLength / 2;
+                      const textDistance = radius * 0.6; // Position at 60% of radius for better visibility
+                      const textX = commonPoint.x + Math.cos(bisectorAngle) * textDistance;
+                      const textY = commonPoint.y + Math.sin(bisectorAngle) * textDistance;
+                      const textZ = commonPoint.z;
+                      
+                      // Apply the same rotation as the disc to maintain alignment
+                      sprite.position.set(textX, textY, textZ);
+                      sprite.scale.set(0.5, 0.25, 1);;
 
                       // Position the text slightly above the common atom
                       const textOffset = normal.clone().multiplyScalar(0.7);
