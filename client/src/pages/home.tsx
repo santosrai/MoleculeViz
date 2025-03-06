@@ -69,11 +69,8 @@ export default function Home() {
 
       {currentMolecule && (
         <div className="grid grid-cols-[400px_1fr] gap-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Chat Assistant</CardTitle>
-            </CardHeader>
-            <CardContent>
+          <Card className="bg-transparent border-0 shadow-none">
+            <CardContent className="p-0">
               <ChatInterface moleculeId={currentMolecule.id} />
             </CardContent>
           </Card>
