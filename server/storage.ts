@@ -42,7 +42,8 @@ export class MemStorage implements IStorage {
     return Array.from(this.molecules.values()).find(
       (molecule) => 
         molecule.name.toLowerCase() === normalizedQuery || 
-        molecule.formula.toLowerCase() === normalizedQuery
+        molecule.formula.toLowerCase() === normalizedQuery ||
+        molecule.formula.replace(/\s+/g, '').toLowerCase() === normalizedQuery.replace(/\s+/g, '')
     );
   }
 
