@@ -254,11 +254,12 @@ export function MoleculeViewer({ structure }: MoleculeViewerProps) {
 
                     // Only create one angle text per bond pair
                     // We'll use a unique key to prevent duplicate angle labels
-                    const bondPairKey = [Math.min(otherAtomId, firstBondAtomId), Math.max(otherAtomId, firstBondAtomId)].join('-');
+                    // Check if we've already processed this bond pair using the same key
+                    const angleBondPairKey = [Math.min(otherAtomId, firstBondAtomId), Math.max(otherAtomId, firstBondAtomId)].join('-');
                     
                     // Skip if we've already processed this bond pair
-                    if (!processedBondPairs.has(bondPairKey)) {
-                      processedBondPairs.add(bondPairKey);
+                    if (!processedBondPairs.has(angleBondPairKey)) {
+                      processedBondPairs.add(angleBondPairKey);
                       
                       // Create angle text
                       const canvas = document.createElement('canvas');
