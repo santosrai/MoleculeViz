@@ -20,6 +20,10 @@ export function ChatInterface({ moleculeId }: ChatInterfaceProps) {
   // Fetch chat history
   const { data: chatHistory = [] } = useQuery({
     queryKey: ["/api/chat", moleculeId],
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/chat/${moleculeId}`);
+      return response.json();
+    },
     enabled: !!moleculeId,
   });
 
