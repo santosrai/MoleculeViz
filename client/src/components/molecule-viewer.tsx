@@ -188,7 +188,16 @@ export function MoleculeViewer({ structure }: MoleculeViewerProps) {
                     // Create a semi-transparent disc to visualize the angle
                     const radius = 1.5;
                     const segments = 32;
-                    const thetaStart = 0;
+                    
+                    // Calculate the angle between the two vectors
+                    const angle = vec1.angleTo(vec2) * (180 / Math.PI);
+                    
+                    // Calculate the bisector vector between vec1 and vec2
+                    const bisector = vec1.clone().add(vec2).normalize();
+                    
+                    // Start angle at -angle/2 to center the disc between the two bonds
+                    const halfAngle = angle / 2;
+                    const thetaStart = -halfAngle * Math.PI / 180;
                     const thetaLength = angle * Math.PI / 180;
 
                     const discGeometry = new THREE.CircleGeometry(radius, segments, thetaStart, thetaLength);
@@ -218,16 +227,19 @@ export function MoleculeViewer({ structure }: MoleculeViewerProps) {
                     const discUpVector = new THREE.Vector3(0, 0, 1);
                     const quaternion = new THREE.Quaternion().setFromUnitVectors(discUpVector, normal);
                     disc.setRotationFromQuaternion(quaternion);
-
-                    // Adjust rotation to align with the first vector
+                    
+                    // Calculate the midpoint angle between vec1 and vec2
+                    const midAngle = Math.atan2(bisector.y, bisector.x);
+                    
+                    // Rotate to align the disc's center with the bisector vector
                     const discXAxis = new THREE.Vector3(1, 0, 0).applyQuaternion(quaternion);
-                    const rotationAngle = discXAxis.angleTo(vec1);
-
+                    const rotationAngle = discXAxis.angleTo(bisector);
+                    
                     // Determine rotation direction
-                    const cross = new THREE.Vector3().crossVectors(discXAxis, vec1);
+                    const cross = new THREE.Vector3().crossVectors(discXAxis, bisector);
                     const directionSign = cross.dot(normal) > 0 ? 1 : -1;
-
-                    // Apply additional rotation
+                    
+                    // Apply rotation to position the disc between the two bonds
                     disc.rotateOnAxis(normal, directionSign * rotationAngle);
 
                     scene.add(disc);
@@ -248,12 +260,12 @@ export function MoleculeViewer({ structure }: MoleculeViewerProps) {
                       const sprite = new THREE.Sprite(spriteMaterial);
                       
                       // Position the text in the middle of the disc
-                      // Calculate position at middle distance between center and edge, along the angle bisector
-                      const bisectorAngle = thetaLength / 2;
+                      // Use the bisector vector we calculated earlier for text positioning
                       const textDistance = radius * 0.6; // Position at 60% of radius for better visibility
-                      const textX = commonPoint.x + Math.cos(bisectorAngle) * textDistance;
-                      const textY = commonPoint.y + Math.sin(bisectorAngle) * textDistance;
-                      const textZ = commonPoint.z;
+                      const textDirection = bisector.clone().multiplyScalar(textDistance);
+                      const textX = commonPoint.x + textDirection.x;
+                      const textY = commonPoint.y + textDirection.y;
+                      const textZ = commonPoint.z + textDirection.z;
                       
                       // Apply the same rotation as the disc to maintain alignment
                       sprite.position.set(textX, textY, textZ);
