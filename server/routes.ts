@@ -26,8 +26,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(molecule);
   });
 
-  app.get("/api/molecules/search/:query", async (req, res) => {
-    const molecule = await storage.searchMolecule(req.params.query);
+  app.get("/api/molecules/name/:name", async (req, res) => {
+    const molecule = await storage.getMoleculeByName(req.params.name);
     if (!molecule) {
       res.status(404).json({ error: "Molecule not found" });
       return;

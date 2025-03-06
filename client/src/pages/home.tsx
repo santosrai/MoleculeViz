@@ -10,13 +10,13 @@ import { apiRequest } from "@/lib/queryClient";
 import { Search } from "lucide-react";
 
 export default function Home() {
-  const [searchQuery, setSearchQuery] = useState("water"); // Default to water
+  const [moleculeName, setMoleculeName] = useState("water"); // Default to water
   const [currentMolecule, setCurrentMolecule] = useState<any>(null);
   const { toast } = useToast();
 
   const searchMutation = useMutation({
-    mutationFn: async (query: string) => {
-      const response = await apiRequest("GET", `/api/molecules/search/${query}`);
+    mutationFn: async (name: string) => {
+      const response = await apiRequest("GET", `/api/molecules/name/${name}`);
       return response.json();
     },
     onSuccess: (data) => {
@@ -38,8 +38,8 @@ export default function Home() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery) {
-      searchMutation.mutate(searchQuery);
+    if (moleculeName) {
+      searchMutation.mutate(moleculeName);
     }
   };
 
@@ -54,9 +54,9 @@ export default function Home() {
         <CardContent>
           <form onSubmit={handleSearch} className="flex gap-2">
             <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by name or formula (e.g., water, H2O)..."
+              value={moleculeName}
+              onChange={(e) => setMoleculeName(e.target.value)}
+              placeholder="Search molecule..."
               className="flex-1"
             />
             <Button type="submit" disabled={searchMutation.isPending}>

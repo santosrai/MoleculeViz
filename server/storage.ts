@@ -37,16 +37,6 @@ export class MemStorage implements IStorage {
     );
   }
 
-  async searchMolecule(query: string): Promise<Molecule | undefined> {
-    const normalizedQuery = query.toLowerCase();
-    return Array.from(this.molecules.values()).find(
-      (molecule) => 
-        molecule.name.toLowerCase() === normalizedQuery || 
-        molecule.formula.toLowerCase() === normalizedQuery ||
-        molecule.formula.replace(/\s+/g, '').toLowerCase() === normalizedQuery.replace(/\s+/g, '')
-    );
-  }
-
   async createMolecule(insertMolecule: InsertMolecule): Promise<Molecule> {
     const id = this.currentMoleculeId++;
     const molecule: Molecule = { ...insertMolecule, id };
