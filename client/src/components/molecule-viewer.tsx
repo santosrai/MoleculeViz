@@ -12,6 +12,7 @@ export function MoleculeViewer({ structure }: MoleculeViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [showLonePairs, setShowLonePairs] = useState(false);
   const [showBondAngles, setShowBondAngles] = useState(false);
+  const [bondLengthFactor, setBondLengthFactor] = useState(1);
   const sceneObjectsRef = useRef<THREE.Object3D[]>([]);
 
   useEffect(() => {
@@ -66,7 +67,13 @@ export function MoleculeViewer({ structure }: MoleculeViewerProps) {
 
       if (atom1 && atom2) {
         const start = new THREE.Vector3(atom1.x, atom1.y, atom1.z);
-        const end = new THREE.Vector3(atom2.x, atom2.y, atom2.z);
+        const originalEnd = new THREE.Vector3(atom2.x, atom2.y, atom2.z);
+        
+        // Apply bond length factor
+        const direction = originalEnd.clone().sub(start).normalize();
+        const distance = start.distanceTo(originalEnd);
+        const adjustedDistance = distance * bondLengthFactor;
+        const end = start.clone().add(direction.multiplyScalar(adjustedDistance));
 
         // Calculate the midpoint and length of the bond
         const midpoint = start.clone().lerp(end, 0.5);
@@ -173,27 +180,43 @@ export function MoleculeViewer({ structure }: MoleculeViewerProps) {
       containerRef.current?.removeChild(renderer.domElement);
       renderer.dispose();
     };
-  }, [structure, showLonePairs, showBondAngles]);
+  }, [structure, showLonePairs, showBondAngles, bondLengthFactor]);
 
   return (
     <div>
       <Card className="p-4 mb-4">
-        <div className="flex gap-4">
-          <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="lone-pairs" 
-              checked={showLonePairs}
-              onCheckedChange={(checked) => setShowLonePairs(checked as boolean)}
-            />
-            <label htmlFor="lone-pairs">Show Lone Pairs</label>
+        <div className="flex flex-col gap-4">
+          <div className="flex gap-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="lone-pairs" 
+                checked={showLonePairs}
+                onCheckedChange={(checked) => setShowLonePairs(checked as boolean)}
+              />
+              <label htmlFor="lone-pairs">Show Lone Pairs</label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="bond-angles" 
+                checked={showBondAngles}
+                onCheckedChange={(checked) => setShowBondAngles(checked as boolean)}
+              />
+              <label htmlFor="bond-angles">Show Bond Angles</label>
+            </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="bond-angles" 
-              checked={showBondAngles}
-              onCheckedChange={(checked) => setShowBondAngles(checked as boolean)}
+          
+          <div className="flex flex-col space-y-2">
+            <label htmlFor="bond-length">Bond Length: {bondLengthFactor.toFixed(1)}x</label>
+            <input
+              id="bond-length"
+              type="range"
+              min="0.5"
+              max="2"
+              step="0.1"
+              value={bondLengthFactor}
+              onChange={(e) => setBondLengthFactor(parseFloat(e.target.value))}
+              className="w-full"
             />
-            <label htmlFor="bond-angles">Show Bond Angles</label>
           </div>
         </div>
       </Card>
