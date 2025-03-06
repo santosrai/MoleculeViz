@@ -225,18 +225,20 @@ export function MoleculeViewer({ structure }: MoleculeViewerProps) {
                     const quaternion = new THREE.Quaternion().setFromUnitVectors(discUpVector, normal);
                     disc.setRotationFromQuaternion(quaternion);
                     
-                    // Calculate the midpoint angle between vec1 and vec2
-                    const midAngle = Math.atan2(bisector.y, bisector.x);
+                    // Get the true bisector vector between the two bonds in 3D space
+                    const trueBisector = new THREE.Vector3()
+                      .addVectors(vec1, vec2)
+                      .normalize();
                     
-                    // Rotate to align the disc's center with the bisector vector
+                    // Rotate to perfectly align the disc with the bisector
                     const discXAxis = new THREE.Vector3(1, 0, 0).applyQuaternion(quaternion);
-                    const rotationAngle = discXAxis.angleTo(bisector);
+                    const rotationAngle = discXAxis.angleTo(trueBisector);
                     
-                    // Determine rotation direction
-                    const cross = new THREE.Vector3().crossVectors(discXAxis, bisector);
+                    // Determine rotation direction to ensure correct orientation
+                    const cross = new THREE.Vector3().crossVectors(discXAxis, trueBisector);
                     const directionSign = cross.dot(normal) > 0 ? 1 : -1;
                     
-                    // Apply rotation to position the disc between the two bonds
+                    // Apply rotation to perfectly position the disc between the two bonds
                     disc.rotateOnAxis(normal, directionSign * rotationAngle);
 
                     scene.add(disc);
@@ -256,10 +258,10 @@ export function MoleculeViewer({ structure }: MoleculeViewerProps) {
                       const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
                       const sprite = new THREE.Sprite(spriteMaterial);
                       
-                      // Position the text in the middle of the disc
-                      // Use the bisector vector we calculated earlier for text positioning
+                      // Position the text exactly in the middle of the disc
+                      // Use the true bisector for precise text positioning
                       const textDistance = radius * 0.6; // Position at 60% of radius for better visibility
-                      const textDirection = bisector.clone().multiplyScalar(textDistance);
+                      const textDirection = trueBisector.clone().multiplyScalar(textDistance);
                       const textX = commonPoint.x + textDirection.x;
                       const textY = commonPoint.y + textDirection.y;
                       const textZ = commonPoint.z + textDirection.z;
